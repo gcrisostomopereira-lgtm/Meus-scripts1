@@ -1,0 +1,243 @@
+--[[
+    Painel ADM do Gugu
+    Criado com auxílio de IA
+    Avisos: Use com moderação. Código estruturado para administração local/educacional.
+--]]
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Configurações de Cores (Tema Dark/Neon parecido com o vídeo)
+local Cores = {
+    Fundo = Color3.fromRGB(25, 25, 25),
+    Topo = Color3.fromRGB(35, 35, 35),
+    Texto = Color3.fromRGB(240, 240, 240),
+    BotaoAtivo = Color3.fromRGB(45, 45, 45),
+    Borda = Color3.fromRGB(0, 180, 255)
+}
+
+-- Criando a Interface Principal (2D na tela)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PainelAdmGugu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:CoreGui -- Coloca no CoreGui para não sumir fácil
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 280, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -180)
+MainFrame.BackgroundColor3 = Cores.Fundo
+MainFrame.BorderSizePixel = 1
+MainFrame.BorderColor3 = Cores.Borda
+MainFrame.Active = true
+MainFrame.Draggable = true -- Permite arrastar o painel pela tela
+MainFrame.Parent = ScreenGui
+
+-- Barra de Topo do Painel
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Cores.Topo
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "painel adm do gugu 🇧🇷"
+Title.TextColor3 = Cores.Texto
+Title.TextSize = 16
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
+Title.Parent = TopBar
+
+-- Botão de Fechar (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 2.5)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 85, 85)
+CloseButton.TextSize = 16
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.BackgroundColor3 = Color3.fromRGB(45, 30, 30)
+CloseButton.Parent = TopBar
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Campo de Pesquisa de Jogador (TextBox)
+local SearchBox = Instance.new("TextBox")
+SearchBox.Size = UDim2.new(1, -20, 0, 30)
+SearchBox.Position = UDim2.new(0, 10, 0, 45)
+SearchBox.PlaceholderText = "🔍 Buscar player..."
+SearchBox.Text = ""
+SearchBox.TextColor3 = Cores.Texto
+SearchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+SearchBox.BackgroundColor3 = Cores.Topo
+SearchBox.Font = Enum.Font.SourceSans
+SearchBox.TextSize = 14
+SearchBox.Parent = MainFrame
+
+-- Container para os Botões de Ação
+local ButtonsFrame = Instance.new("Frame")
+ButtonsFrame.Size = UDim2.new(1, -20, 1, -95)
+ButtonsFrame.Position = UDim2.new(0, 10, 0, 85)
+ButtonsFrame.BackgroundTransparency = 1
+ButtonsFrame.Parent = MainFrame
+
+local UIGridLayout = Instance.new("UIGridLayout")
+UIGridLayout.CellSize = UDim2.new(0.5, -5, 0, 40)
+UIGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+UIGridLayout.Parent = ButtonsFrame
+
+-- Função para buscar o jogador pelo que foi digitado
+local function obterJogadorAlvo()
+    local texto = SearchBox.Text:lower()
+    if texto == "" then return nil end
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Name:lower():sub(1, #texto) == texto or (player.DisplayName and player.DisplayName:lower():sub(1, #texto) == texto) then
+            return player
+        end
+    end
+    return nil
+end
+
+-- Lista de Funções baseadas no vídeo (Lógica Executada)
+local funcoes = {
+    {
+        Nome = "👢 Kick",
+        Callback = function(alvo)
+            if alvo then
+                alvo:Kick("Você foi removido pelo Painel do Gugu.")
+            end
+        end
+    },
+    {
+        Nome = "🚫 Ban",
+        Callback = function(alvo)
+            if alvo then
+                if alvo == LocalPlayer then
+                    LocalPlayer:Kick("Você foi banido pelo Painel do Gugu.")
+                else
+                    alvo:Destroy() -- Deleta o jogador na visão local
+                end
+            end
+        end
+    },
+    {
+        Nome = "🔒 Jail",
+        Callback = function(alvo)
+            if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = alvo.Character.HumanoidRootPart
+                
+                -- Cria uma barreira invisível/forçafield local ao redor do alvo
+                local jaula = Instance.new("Part")
+                jaula.Size = Vector3.new(6, 8, 6)
+                jaula.CFrame = hrp.CFrame
+                jaula.Transparency = 0.6
+                jaula.BrickColor = BrickColor.new("White")
+                jaula.Anchored = true
+                jaula.Material = Enum.Material.ForceField
+                jaula.Name = "JaulaGugu_" .. alvo.Name
+                jaula.Parent = workspace
+                
+                if alvo == LocalPlayer then
+                    hrp.Anchored = true
+                end
+            end
+        end
+    },
+    {
+        Nome = "🔓 Unjail",
+        Callback = function(alvo)
+            if alvo then
+                local jaula = workspace:FindFirstChild("JaulaGugu_" .. alvo.Name)
+                if jaula then jaula:Destroy() end
+                
+                if alvo == LocalPlayer and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+                    alvo.Character.HumanoidRootPart.Anchored = false
+                end
+            end
+        end
+    },
+    {
+        Nome = "🧊 Ice",
+        Callback = function(alvo)
+            if alvo and alvo.Character then
+                for _, part in ipairs(alvo.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Anchored = true
+                        part.BrickColor = BrickColor.new("Light blue")
+                    end
+                end
+            end
+        end
+    },
+    {
+        Nome = "🔥 Unice",
+        Callback = function(alvo)
+            if alvo and alvo.Character then
+                for _, part in ipairs(alvo.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Anchored = false
+                    end
+                end
+            end
+        end
+    },
+    {
+        Nome = "❄️ Freeze",
+        Callback = function(alvo)
+            if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") then
+                alvo.Character.Humanoid.WalkSpeed = 0
+                alvo.Character.Humanoid.JumpPower = 0
+            end
+        end
+    },
+    {
+        Nome = "☀️ Unfreeze",
+        Callback = function(alvo)
+            if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") then
+                alvo.Character.Humanoid.WalkSpeed = 16
+                alvo.Character.Humanoid.JumpPower = 50
+            end
+        end
+    }
+}
+
+-- C-- Criando os botões dinamicamente no menu
+for _, dados in ipairs(funcoes) do
+    local Btn = Instance.new("TextButton")
+    Btn.Text = dados.Nome
+    Btn.TextColor3 = Cores.Texto
+    Btn.BackgroundColor3 = Cores.BotaoAtivo
+    Btn.Font = Enum.Font.SourceSansBold
+    Btn.TextSize = 14
+    Btn.BorderSizePixel = 0
+    
+    -- Efeito de Hover (Mudar de cor ao passar o mouse)
+    Btn.MouseEnter:Connect(function()
+        Btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end)
+    Btn.MouseLeave:Connect(function()
+        Btn.BackgroundColor3 = Cores.BotaoAtivo
+    end)
+    
+    -- Evento de clique
+    Btn.MouseButton1Click:Connect(function()
+        local alvo = obterJogadorAlvo()
+        if alvo then
+            dados.Callback(alvo)
+        else
+            -- Se não digitar ninguém, executa as ações seguras em si mesmo
+            if not dados.Nome:find("Kick") and not dados.Nome:find("Ban") then
+                dados.Callback(LocalPlayer)
+            end
+        end
+    end)
+    
+    Btn.Parent = ButtonsFrame
+end
+
+print("Painel Adm do Gugu inicializado!")
